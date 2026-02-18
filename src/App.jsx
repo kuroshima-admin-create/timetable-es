@@ -80,14 +80,20 @@ const DAY_JS_MAP = { 月: 1, 火: 2, 水: 3, 木: 4, 金: 5, 土: 6, 日: 0 };
 // ============================================================
 // HELPERS
 // ============================================================
-function calcCnt(period, modOn) {
-  if (period === 6) return 1.0;
-  return modOn ? 1.0 : 40 / 45;
+// modMode: "none" | "am" | "pm"
+function calcCnt(period, modMode) {
+  if (period === 6) {
+    if (modMode === "pm") return (45 + 25) / 45;  // 午後反映: ≒1.56
+    return 1.0;
+  }
+  // 1〜5校時 = 40分
+  if (modMode === "am") return (40 + 25 / 5) / 45; // 午前反映: = 1.0
+  return 40 / 45;                                    // なし: ≒0.89
 }
 
-function countForGrade(cell, grade, period, modOn) {
+function countForGrade(cell, grade, period, modMode) {
   if (!cell) return { subject: null, count: 0 };
-  const cnt = calcCnt(period, modOn);
+  const cnt = calcCnt(period, modMode);
   if (cell.type === "split" && cell.grades) {
     const gs = cell.grades[grade];
     if (gs?.subject) return { subject: gs.subject, count: cnt };
@@ -104,6 +110,19 @@ function isEmptyCell(v) { return v && v._empty === true; }
 
 function getWeekMod(modSched, weekNum) {
   return modSched?.[weekNum] || {};
+}
+
+// ひらめき 3-mode helpers
+const MOD_MODES = ["none", "am", "pm"];
+const MOD_LABELS = { none: "なし", am: "午前", pm: "午後" };
+const MOD_STYLES = {
+  none: { bg: "#f5f3ef", border: "1px solid #e8e4de", color: "#ccc", label: "○ なし" },
+  am:   { bg: "#dcfce7", border: "2px solid #22c55e", color: "#16a34a", label: "● 午前" },
+  pm:   { bg: "#dbeafe", border: "2px solid #3b82f6", color: "#1d4ed8", label: "● 午後" },
+};
+function nextModMode(current) {
+  const idx = MOD_MODES.indexOf(current || "none");
+  return MOD_MODES[(idx + 1) % 3];
 }
 
 function emptyTT(days) {
@@ -184,7 +203,7 @@ function analyzeHoursForGrade(grade, classId, baseTT, overrides, modSched, upToW
       PER.forEach(p => {
         if (p > MAX_PERIODS_BY_GRADE[grade]) return;
         const cell = tt[d]?.[p];
-        const { subject, count } = countForGrade(cell, grade, p, wMod[d]);
+        const { subject, count } = countForGrade(cell, grade, p, wMod[d] || "none");
         if (subject && subs.includes(subject)) {
           totals[subject] = (totals[subject] || 0) + count;
         }
@@ -218,7 +237,7 @@ function analyzeNonCountForGrade(grade, classId, baseTT, overrides, modSched, up
       PER.forEach(p => {
         if (p > MAX_PERIODS_BY_GRADE[grade]) return;
         const cell = tt[d]?.[p];
-        const { subject, count } = countForGrade(cell, grade, p, wMod[d]);
+        const { subject, count } = countForGrade(cell, grade, p, wMod[d] || "none");
         if (subject && NON_COUNT_SUBS.includes(subject)) {
           totals[subject] = (totals[subject] || 0) + count;
         }
@@ -549,7 +568,7 @@ function WeekNav({ curWeek, setCurWeek, semester, semDates, totalWeeks }) {
 // ============================================================
 // SPLIT CELL DISPLAY — 複式学級セル表示
 // ============================================================
-function CellDisplay({ cell, period, modOn, classGrades }) {
+function CellDisplay({ cell, period, modMode, classGrades }) {
   if (!cell || isEmptyCell(cell)) {
     return <div style={{ height: "100%", borderRadius: 7, border: "1px dashed #e8e4de", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "#ddd", fontSize: 9 }}>—</span></div>;
   }
@@ -563,7 +582,7 @@ function CellDisplay({ cell, period, modOn, classGrades }) {
     );
   }
   const isNonCount = cell.subject && NON_COUNT_SUBS.includes(cell.subject);
-  const cnt = (cell.subject || cell.type === "split") && !isNonCount ? calcCnt(period, modOn) : 0;
+  const cnt = (cell.subject || cell.type === "split") && !isNonCount ? calcCnt(period, modMode) : 0;
 
   if (cell.type === "split" && cell.grades) {
     const gradeKeys = Object.keys(cell.grades).map(Number).sort();
@@ -578,7 +597,7 @@ function CellDisplay({ cell, period, modOn, classGrades }) {
           );
           const s = subjectColor(gs.subject);
           const isNC = NON_COUNT_SUBS.includes(gs.subject);
-          const gCnt = !isNC ? calcCnt(period, modOn) : 0;
+          const gCnt = !isNC ? calcCnt(period, modMode) : 0;
           return (
             <div key={g} style={{ flex: 1, padding: "1px 3px", background: s.bg, borderBottom: i < gradeKeys.length - 1 ? "1px solid " + s.bd + "40" : "none", display: "flex", alignItems: "center", gap: 2, minHeight: 22 }}>
               <span style={{ fontSize: 7, fontWeight: 800, color: s.bd, flexShrink: 0, width: 16 }}>{g}年</span>
@@ -758,7 +777,7 @@ function TTHeader({ days, curWeek, semDates, weekEvents, weekMod }) {
   );
 }
 
-function WeeklyGrid({ tt, modSched, curWeek, days, semDates, weekEvents, classObj, editable, onCellClick, teachers }) {
+function WeeklyGrid({ tt, modSched, curWeek, days, semDates, weekEvents, classObj, editable, onCellClick, teachers, onModToggle }) {
   const weekMod = getWeekMod(modSched, curWeek);
   const classGrades = classObj?.grades || [];
   return (
@@ -772,7 +791,38 @@ function WeeklyGrid({ tt, modSched, curWeek, days, semDates, weekEvents, classOb
           const allGradesAbove = classGrades.every(g => p > MAX_PERIODS_BY_GRADE[g]);
           const someGradeAbove = classGrades.some(g => p > MAX_PERIODS_BY_GRADE[g]);
           if (allGradesAbove) return null;
-          return (
+          // Insert ひらめき row after 5校時
+          const rows = [];
+          if (p === 6) {
+            rows.push(
+              <tr key="mod-row">
+                <td style={{ textAlign: "center", padding: 3 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#16a34a" }}>ひらめき</div>
+                  <div style={{ fontSize: 7, color: "#999" }}>25分</div>
+                  <div style={{ fontSize: 6, color: "#bbb" }}>{PTIMES_ES.mod.start}</div>
+                </td>
+                {days.map(d => {
+                  const mode = weekMod[d] || "none";
+                  const ms = MOD_STYLES[mode];
+                  return (
+                    <td key={d} style={{ padding: 2, textAlign: "center" }}>
+                      {onModToggle ? (
+                        <button onClick={() => onModToggle(d)}
+                          style={{ width: "100%", padding: "4px 6px", borderRadius: 5, border: ms.border, background: ms.bg, cursor: "pointer", fontSize: 9, fontWeight: 600, color: ms.color, transition: "all .15s" }}>
+                          {ms.label}
+                        </button>
+                      ) : (
+                        <div style={{ padding: "4px 6px", borderRadius: 5, border: ms.border, background: ms.bg, fontSize: 9, fontWeight: 600, color: ms.color }}>
+                          {ms.label}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          }
+          rows.push(
             <tr key={p}>
               <td style={{ textAlign: "center", padding: 3 }}>
                 <div style={{ fontSize: 11, fontWeight: 700 }}>{p}校時</div>
@@ -781,47 +831,46 @@ function WeeklyGrid({ tt, modSched, curWeek, days, semDates, weekEvents, classOb
               </td>
               {days.map(d => {
                 const cell = tt[d]?.[p];
-                const mOn = weekMod[d];
+                const modMode = weekMod[d] || "none";
                 const isWeekend = d === "土" || d === "日";
                 return (
                   <td key={d} onClick={() => { if (editable && !cell?.isEvent) onCellClick?.(d, p, cell); }}
                     style={{ padding: 0, height: classGrades.length > 1 ? 56 : 48, verticalAlign: "middle", position: "relative", background: isWeekend ? "#fefbfb" : undefined, cursor: editable && !cell?.isEvent ? "pointer" : "default" }}>
-                    <CellDisplay cell={cell} period={p} modOn={mOn} classGrades={classGrades} />
+                    <CellDisplay cell={cell} period={p} modMode={modMode} classGrades={classGrades} />
                   </td>
                 );
               })}
             </tr>
           );
+          return rows;
         })}
-        {/* ひらめき row */}
-        <tr>
-          <td style={{ textAlign: "center", padding: 3 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "#16a34a" }}>ひらめき</div>
-            <div style={{ fontSize: 7, color: "#999" }}>25分</div>
-          </td>
-          {days.map(d => {
-            const mOn = weekMod[d];
-            return (
-              <td key={d} style={{ padding: 2, textAlign: "center" }}>
-                {editable ? (
-                  <button onClick={() => {
-                    const nm = { ...modSched };
-                    const wm = { ...(nm[curWeek] || {}) };
-                    wm[d] = !wm[d];
-                    nm[curWeek] = wm;
-                    // We need setModSched to be passed... handle via onCellClick pattern
-                  }} style={{ padding: "3px 10px", borderRadius: 5, border: mOn ? "2px solid #22c55e" : "1px solid #e8e4de", background: mOn ? "#dcfce7" : "#fff", cursor: "pointer", fontSize: 9, fontWeight: 600, color: mOn ? "#16a34a" : "#ccc" }}>
-                    {mOn ? "● ON" : "○ OFF"}
-                  </button>
-                ) : (
-                  <span style={{ fontSize: 9, fontWeight: 600, color: mOn ? "#16a34a" : "#ccc" }}>
-                    {mOn ? "● ON" : "○ OFF"}
-                  </span>
-                )}
-              </td>
-            );
-          })}
-        </tr>
+        {/* ひらめき row for classes with max 5 periods (no 6th period row to trigger it) */}
+        {classGrades.every(g => MAX_PERIODS_BY_GRADE[g] <= 5) && (
+          <tr>
+            <td style={{ textAlign: "center", padding: 3 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "#16a34a" }}>ひらめき</div>
+              <div style={{ fontSize: 7, color: "#999" }}>25分</div>
+            </td>
+            {days.map(d => {
+              const mode = weekMod[d] || "none";
+              const ms = MOD_STYLES[mode];
+              return (
+                <td key={d} style={{ padding: 2, textAlign: "center" }}>
+                  {onModToggle ? (
+                    <button onClick={() => onModToggle(d)}
+                      style={{ width: "100%", padding: "4px 6px", borderRadius: 5, border: ms.border, background: ms.bg, cursor: "pointer", fontSize: 9, fontWeight: 600, color: ms.color }}>
+                      {ms.label}
+                    </button>
+                  ) : (
+                    <div style={{ padding: "4px 6px", borderRadius: 5, border: ms.border, background: ms.bg, fontSize: 9, fontWeight: 600, color: ms.color }}>
+                      {ms.label}
+                    </div>
+                  )}
+                </td>
+              );
+            })}
+          </tr>
+        )}
       </tbody>
     </table>
   );
@@ -1282,11 +1331,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
   const [cellEdit, setCellEdit] = useState(null);
   const [dragSub, setDragSub] = useState(null);
 
-  // AI
-  const [aiMsgs, setAiMsgs] = useState([]);
-  const [aiIn, setAiIn] = useState("");
-  const [aiLoad, setAiLoad] = useState(false);
-  const chatRef = useRef(null);
+
 
   // Gcal sync
   const [syncStatus, setSyncStatus] = useState("idle");
@@ -1405,10 +1450,11 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
     notify("ベースに戻しました");
   }, [selCls, curWeek, setOverrides, setModSched, notify]);
 
-  const toggleMod = useCallback((day) => {
+  const cycleMod = useCallback((day) => {
     setModSched(prev => {
       const nm = { ...prev }; const wm = { ...(nm[curWeek] || {}) };
-      wm[day] = !wm[day]; nm[curWeek] = wm; return nm;
+      wm[day] = nextModMode(wm[day]);
+      nm[curWeek] = wm; return nm;
     });
   }, [curWeek, setModSched]);
 
@@ -1446,25 +1492,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
     notify(`${imported}件取込完了`); setIcsModal(false);
   }, [curWeek, semDates, activeDays, setEvents, updateWeekCell, notify]);
 
-  // AI
-  const handleAi = useCallback(async () => {
-    if (!aiIn.trim()) return; const msg = aiIn.trim(); setAiIn(""); setAiLoad(true);
-    setAiMsgs(p => [...p, { role: "user", content: msg }]);
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 1000,
-          system: `日本の小学校（複式学級・小規模校）の教務支援AI。1〜5校時は40分、6校時は45分。ひらめき（モジュール25分）がある日は1〜5校時が1.0カウント、ない日は約0.89カウント。6校時は常に1.0カウント。複式学級では1コマ内で学年別に異なる教科を指導する「わたり・ずらし」がある。簡潔に日本語で回答。`,
-          messages: [...aiMsgs.map(m => ({ role: m.role, content: m.content })), { role: "user", content: msg }]
-        })
-      });
-      const data = await res.json();
-      setAiMsgs(p => [...p, { role: "assistant", content: data.content?.map(c => c.text || "").join("") || "回答生成失敗" }]);
-    } catch { setAiMsgs(p => [...p, { role: "assistant", content: "API接続エラー" }]); }
-    setAiLoad(false);
-  }, [aiIn, aiMsgs]);
-  useEffect(() => { chatRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMsgs]);
+
 
   const tabs = [
     { id: "weekly", label: "週間時間割", icon: "▦" },
@@ -1472,7 +1500,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
     { id: "base", label: "ベース時間割", icon: "◉" },
     { id: "hours", label: "授業時数", icon: "◎" },
     { id: "events", label: "行事・研修", icon: "☆" },
-    { id: "ai", label: "AI相談", icon: "◈" },
+
     { id: "settings", label: "設定", icon: "⚙" },
   ];
 
@@ -1541,21 +1569,8 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
           <Card style={{ padding: 10, overflowX: "auto" }}>
             <WeeklyGrid tt={weekTT} modSched={modSched} curWeek={curWeek} days={activeDays}
               semDates={semDates} weekEvents={weekEvents} classObj={cls} editable={true}
-              onCellClick={(d, p, cell) => setCellEdit({ d, p, cell })} teachers={teachers} />
-            {/* Module toggle row rendered inside WeeklyGrid already, but we need to wire toggleMod */}
-            <div style={{ display: "flex", gap: 2, marginTop: 4, paddingLeft: 60 }}>
-              {activeDays.map(d => {
-                const mOn = getWeekMod(modSched, curWeek)[d];
-                return (
-                  <div key={d} style={{ flex: 1, textAlign: "center" }}>
-                    <button onClick={() => toggleMod(d)}
-                      style={{ padding: "3px 10px", borderRadius: 5, border: mOn ? "2px solid #22c55e" : "1px solid #e8e4de", background: mOn ? "#dcfce7" : "#fff", cursor: "pointer", fontSize: 9, fontWeight: 600, color: mOn ? "#16a34a" : "#ccc" }}>
-                      ひらめき {mOn ? "● ON" : "○ OFF"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+              onCellClick={(d, p, cell) => setCellEdit({ d, p, cell })} teachers={teachers}
+              onModToggle={cycleMod} />
           </Card>
         </div>
       )}
@@ -1655,7 +1670,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
                                   setDragSub(null);
                                 }}
                                 style={{ padding: 0, height: cls && cls.grades.length > 1 ? 56 : 48, verticalAlign: "middle", cursor: "pointer" }}>
-                                <CellDisplay cell={cell} period={p} modOn={false} classGrades={cls?.grades || []} />
+                                <CellDisplay cell={cell} period={p} modMode="none" classGrades={cls?.grades || []} />
                               </td>
                             );
                           })}
@@ -1759,30 +1774,6 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
                 })}
               </div>
             )}
-          </Card>
-        </div>
-      )}
-
-      {/* ========= AI ========= */}
-      {tab === "ai" && (
-        <div style={{ animation: "fadeUp .3s ease-out" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>◈ AI相談</h2>
-          <Card style={{ minHeight: 300 }}>
-            <div style={{ maxHeight: 350, overflowY: "auto", marginBottom: 10 }}>
-              {aiMsgs.length === 0 && <p style={{ fontSize: 11, color: "#aaa", textAlign: "center", padding: 30 }}>時間割についての相談を入力してください</p>}
-              {aiMsgs.map((m, i) => (
-                <div key={i} style={{ marginBottom: 10, display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-                  <div style={{ maxWidth: "80%", padding: "10px 14px", borderRadius: 12, background: m.role === "user" ? "#c0392b" : "#f5f3ef", color: m.role === "user" ? "#fff" : "#333", fontSize: 12, lineHeight: 1.8, whiteSpace: "pre-line" }}>{m.content}</div>
-                </div>
-              ))}
-              {aiLoad && <div style={{ textAlign: "center", padding: 10, fontSize: 11, color: "#999" }}>考え中...</div>}
-              <div ref={chatRef} />
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <input value={aiIn} onChange={e => setAiIn(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleAi(); }}
-                placeholder="例: 3・4年学級の算数の時数が足りない場合どうすれば？" style={{ flex: 1, padding: "10px 14px", borderRadius: 8, border: "1px solid #e8e4de", fontSize: 12 }} />
-              <BtnP onClick={handleAi}>送信</BtnP>
-            </div>
           </Card>
         </div>
       )}
