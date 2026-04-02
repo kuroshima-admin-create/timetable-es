@@ -1706,7 +1706,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
                         const done = r.done;
                         const total = r.annual;
                         const pct = Math.round((done / total) * 100);
-                        const weekCount = upToWeek || 1;
+                        const weekCount = curWeek || 1;
                         const expectedPct = Math.round((weekCount / (totalWeeks || 35)) * 100);
                         const severity = pct === 0 ? "none" : pct < expectedPct - 10 ? "danger" : pct < expectedPct - 5 ? "warning" : "success";
                         // --- ここまで追加 ---
