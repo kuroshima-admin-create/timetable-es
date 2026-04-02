@@ -218,8 +218,8 @@ function analyzeHoursForGrade(grade, classId, baseTT, overrides, modSched, upToW
     const remWeeks = tw - upToWeek;
     const neededPerWk = remWeeks > 0 ? Math.round(remaining / remWeeks * 100) / 100 : 0;
     const pct = annual > 0 ? Math.round(done / annual * 100) : 0;
-    const weekCount = (records || []).filter(r => r && r.type === "weekly").length;
-    const expectedPct = Math.round((weekCount / 45) * 100);
+    const weekCount = upToWeek || 1;
+    const expectedPct = Math.round((weekCount / (totalWeeks || 35)) * 100);
     let sv = "ok";
     if (pct < expectedPct - 10) sv = "danger";
     else if (pct < expectedPct - 5) sv = "warning";
