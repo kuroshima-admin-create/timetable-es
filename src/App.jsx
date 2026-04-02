@@ -204,7 +204,7 @@ function analyzeHoursForGrade(grade, classId, baseTT, overrides, modSched, upToW
         if (p > MAX_PERIODS_BY_GRADE[grade]) return;
         const cell = tt[d]?.[p];
         const { subject, count } = countForGrade(cell, grade, p, wMod[d] || "none");
-        if (subject && subs.includes(subject)) {
+        if (subject && subs?.includes(subject)) {
           totals[subject] = (totals[subject] || 0) + count;
         }
       });
@@ -238,7 +238,7 @@ function analyzeNonCountForGrade(grade, classId, baseTT, overrides, modSched, up
         if (p > MAX_PERIODS_BY_GRADE[grade]) return;
         const cell = tt[d]?.[p];
         const { subject, count } = countForGrade(cell, grade, p, wMod[d] || "none");
-        if (subject && NON_COUNT_SUBS.includes(subject)) {
+        if (subject && NON_COUNT_SUBS?.includes(subject)) {
           totals[subject] = (totals[subject] || 0) + count;
         }
       });
@@ -581,7 +581,7 @@ function CellDisplay({ cell, period, modMode, classGrades }) {
       </div>
     );
   }
-  const isNonCount = cell.subject && NON_COUNT_SUBS.includes(cell.subject);
+  const isNonCount = cell.subject && NON_COUNT_SUBS?.includes(cell.subject);
   const cnt = (cell.subject || cell.type === "split") && !isNonCount ? calcCnt(period, modMode) : 0;
 
   if (cell.type === "split" && cell.grades) {
@@ -596,7 +596,7 @@ function CellDisplay({ cell, period, modMode, classGrades }) {
             </div>
           );
           const s = subjectColor(gs.subject);
-          const isNC = NON_COUNT_SUBS.includes(gs.subject);
+          const isNC = NON_COUNT_SUBS?.includes(gs.subject);
           const gCnt = !isNC ? calcCnt(period, modMode) : 0;
           return (
             <div key={g} style={{ flex: 1, padding: "1px 3px", background: s.bg, borderBottom: i < gradeKeys.length - 1 ? "1px solid " + s.bd + "40" : "none", display: "flex", alignItems: "center", gap: 2, minHeight: 22 }}>
@@ -607,7 +607,7 @@ function CellDisplay({ cell, period, modMode, classGrades }) {
           );
         })}
         {/* Show 1年下校 label for 6th period */}
-        {period === 6 && classGrades?.includes(1) && !gradeKeys.includes(1) && (
+        {period === 6 && classGrades?.includes(1) && !gradeKeys?.includes(1) && (
           <div style={{ padding: "1px 3px", background: "#f0ede8", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ fontSize: 7, color: "#999", fontStyle: "italic" }}>1年下校</span>
           </div>
@@ -646,8 +646,7 @@ function CellEditModal({ cell, classObj, period, day, onSave, onDelete, onClose,
   const [allSubject, setAllSubject] = useState(cell?.subject || "");
   const [splitGrades, setSplitGrades] = useState(() => {
     const sg = {};
-    grades.forEach(g => {
-      sg[g] = cell?.type === "split" && cell?.grades?.[g]?.subject ? cell.grades[g].subject : "";
+    grades.forEach(g => {sg[g] = cell?.type === "split" && cell?.grades?.[g]?.subject ? cell.grades[g].subject : "";
     });
     return sg;
   });
@@ -981,7 +980,7 @@ function EventForm({ onAdd, onClose, week, activeDays }) {
         <div><label style={{ fontSize: 10, fontWeight: 600, color: "#999", display: "block", marginBottom: 3 }}>時間帯</label>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <button onClick={() => setAllDay(!allDay)} style={{ padding: "5px 12px", borderRadius: 5, border: allDay ? "2px solid #c0392b" : "1px solid #e8e4de", background: allDay ? "#fef2f0" : "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>終日</button>
-            {!allDay && <div style={{ display: "flex", gap: 3 }}>{PER.map(p => <button key={p} onClick={() => setPeriods(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} style={{ width: 26, height: 26, borderRadius: 5, border: periods.includes(p) ? "2px solid #c0392b" : "1px solid #e8e4de", background: periods.includes(p) ? "#fef2f0" : "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{p}</button>)}</div>}
+            {!allDay && <div style={{ display: "flex", gap: 3 }}>{PER.map(p => <button key={p} onClick={() => setPeriods(prev => prev?.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} style={{ width: 26, height: 26, borderRadius: 5, border: periods?.includes(p) ? "2px solid #c0392b" : "1px solid #e8e4de", background: periods?.includes(p) ? "#fef2f0" : "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{p}</button>)}</div>}
           </div></div>
       </div>
       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 16 }}>
@@ -1090,13 +1089,13 @@ function TeacherMgr({ teachers, setTeachers, classes }) {
 function ClassConfig({ classes, setClasses, teachers, setTeachers }) {
   const allGrades = [1, 2, 3, 4, 5, 6];
   const assignedGrades = classes.flatMap(c => c.grades);
-  const unassigned = allGrades.filter(g => !assignedGrades.includes(g));
+  const unassigned = allGrades.filter(g => !assignedGrades?.includes(g));
 
   const toggleGrade = (classIdx, grade) => {
     setClasses(prev => {
       const next = prev.map((c, i) => {
         if (i !== classIdx) return { ...c, grades: c.grades.filter(g => g !== grade) };
-        const has = c.grades.includes(grade);
+        const has = c.grades?.includes(grade);
         const newGrades = has ? c.grades.filter(g => g !== grade) : [...c.grades, grade].sort();
         const newName = newGrades.map(g => g).join("・") + "年";
         const newId = newGrades.join("");
@@ -1132,8 +1131,8 @@ function ClassConfig({ classes, setClasses, teachers, setTeachers }) {
           </div>
           <div style={{ display: "flex", gap: 4 }}>
             {allGrades.map(g => {
-              const inThis = c.grades.includes(g);
-              const inOther = !inThis && assignedGrades.includes(g);
+              const inThis = c.grades?.includes(g);
+              const inOther = !inThis && assignedGrades?.includes(g);
               return (
                 <button key={g} onClick={() => { if (!inOther) toggleGrade(ci, g); }}
                   style={{ width: 40, height: 36, borderRadius: 6, cursor: inOther ? "not-allowed" : "pointer",
@@ -1195,7 +1194,7 @@ function MonthlyView({ baseTTs, overrides, events, syncedEvents, modSched, semDa
     if (!dt) return { subjects: [], evts: [] };
     const dow = dt.getDay();
     const dayName = dayNames[dow];
-    if (!activeDays.includes(dayName)) return { subjects: [], evts: [] };
+    if (!activeDays?.includes(dayName)) return { subjects: [], evts: [] };
     const wk = dateToWeekNum(dt, semDates);
     if (wk < 1 || wk > 52) return { subjects: [], evts: [] };
     const tt = resolveWeekTT(baseTTs[selCls] || {}, overrides[selCls] || {}, wk, activeDays);
@@ -1269,7 +1268,7 @@ function MonthlyView({ baseTTs, overrides, events, syncedEvents, modSched, semDa
                   const isToday = dt.getTime() === today.getTime();
                   const isWeekend = ci === 0 || ci === 6;
                   const inSchool = isSchoolDay(dt);
-                  const isActive = activeDays.includes(dayNames[ci]);
+                  const isActive = activeDays?.includes(dayNames[ci]);
                   const { subjects, evts, weekNum } = getDayData(dt);
                   return (
                     <td key={ci} onClick={() => goToWeek(dt)}
@@ -1363,8 +1362,8 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
           const dayName = ["日", "月", "火", "水", "木", "金", "土"][evtDate.getDay()];
           let type = item.calType || "行事";
           const title = item.title || item.summary || "（無題）";
-          if (title.includes("研修")) type = "研修";
-          else if (title.includes("出張")) type = "出張";
+          if (title?.includes("研修")) type = "研修";
+          else if (title?.includes("出張")) type = "出張";
           allFetched.push({ title, type, day: dayName, allDay: item.allDay !== false, periods: [], source: "gcal" });
         });
       } else {
@@ -1397,8 +1396,8 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
               if (evtDate < mon || evtDate >= weekEnd) return;
               const dayName = ["日", "月", "火", "水", "木", "金", "土"][evtDate.getDay()];
               let type = cal.type || "行事";
-              if (evt.title.includes("研修")) type = "研修";
-              else if (evt.title.includes("出張")) type = "出張";
+              if (evt.title?.includes("研修")) type = "研修";
+              else if (evt.title?.includes("出張")) type = "出張";
               allFetched.push({ title: evt.title, type, day: dayName, allDay: true, periods: [], source: "gcal", calLabel: cal.label });
             });
           }
@@ -1480,10 +1479,10 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
       const evtDate = new Date(evt.date + "T00:00:00");
       if (evtDate < mon || evtDate >= weekEnd) return;
       const dayName = ["日", "月", "火", "水", "木", "金", "土"][evtDate.getDay()];
-      if (!activeDays.includes(dayName)) return;
+      if (!activeDays?.includes(dayName)) return;
       let type = "行事";
-      if (evt.title.includes("研修")) type = "研修";
-      else if (evt.title.includes("出張")) type = "出張";
+      if (evt.title?.includes("研修")) type = "研修";
+      else if (evt.title?.includes("出張")) type = "出張";
       const newEvt = { title: evt.title, type, day: dayName, periods: [], allDay: true };
       setEvents(prev => ({ ...prev, [curWeek]: [...(prev[curWeek] || []), newEvt] }));
       PER.forEach(p => { updateWeekCell(dayName, p, { subject: `【${type}】`, teacher: null, teacherName: "", eventTitle: evt.title, isEvent: true }); });
@@ -1600,7 +1599,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
                   <>
                     <h4 style={{ fontSize: 10, color: "#999", fontWeight: 700, marginBottom: 6 }}>【一斉指導】共通科目</h4>
                     {(() => {
-                      const common = ALL_SUBS_ES.filter(s => cls.grades.every(g => subjectsForGrade(g).includes(s)));
+                      const common = ALL_SUBS_ES.filter(s => cls.grades.every(g => subjectsForGrade(g)?.includes(s)));
                       return common.map(sub => {
                         const s = SC[sub]; return <div key={sub} draggable onDragStart={() => setDragSub({ type: "all", subject: sub })} style={{ padding: "4px 7px", borderRadius: 5, fontSize: 9, background: s.bg, color: s.tx, fontWeight: 700, cursor: "grab", borderLeft: `3px solid ${s.bd}`, marginBottom: 3, userSelect: "none" }}>{sub}</div>;
                       });
@@ -1608,7 +1607,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
                     {cls.grades.map(g => (
                       <div key={g}>
                         <h4 style={{ fontSize: 10, color: "#999", fontWeight: 700, marginTop: 8, marginBottom: 4 }}>【{g}年の教科】</h4>
-                        {subjectsForGrade(g).filter(s => !cls.grades.every(gg => subjectsForGrade(gg).includes(s))).map(sub => {
+                        {subjectsForGrade(g).filter(s => !cls.grades.every(gg => subjectsForGrade(gg)?.includes(s))).map(sub => {
                           const s = SC[sub]; return <div key={sub} draggable onDragStart={() => setDragSub({ type: "split", grade: g, subject: sub })} style={{ padding: "3px 6px", borderRadius: 5, fontSize: 8, background: s.bg, color: s.tx, fontWeight: 700, cursor: "grab", borderLeft: `3px solid ${s.bd}`, marginBottom: 2, userSelect: "none" }}>{g}年 {sub}</div>;
                         })}
                       </div>
@@ -1812,13 +1811,13 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
               <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>📆 授業実施曜日</h3>
               <div style={{ display: "flex", gap: 5 }}>
                 {ALL_DAYS.map(d => {
-                  const active = activeDays.includes(d);
+                  const active = activeDays?.includes(d);
                   const isWE = d === "土" || d === "日";
                   return (
                     <button key={d} onClick={() => {
                       setActiveDays(prev => {
-                        if (prev.includes(d)) return prev.filter(x => x !== d);
-                        return ALL_DAYS.filter(x => prev.includes(x) || x === d);
+                        if (prev?.includes(d)) return prev.filter(x => x !== d);
+                        return ALL_DAYS.filter(x => prev?.includes(x) || x === d);
                       });
                     }} style={{ flex: 1, padding: "10px 4px", borderRadius: 7, textAlign: "center", cursor: "pointer", border: active ? (isWE ? "2px solid #c0392b" : "2px solid #22c55e") : "2px solid #e8e4de", background: active ? (isWE ? "#fef2f0" : "#f0fdf4") : "#fff" }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: isWE ? "#c0392b" : "#1a1625" }}>{d}</div>
