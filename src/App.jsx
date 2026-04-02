@@ -2182,7 +2182,56 @@ return (
     {analysis && Array.isArray(analysis) ? analysis.map(r => {
 // ↑ ここまで
                   <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "#27ae60" }}>{g}年生</h4>
-                  {analysis.map(r => {
+                  {/* analysisが存在し、かつ配列（Array）である場合のみmapを実行する */}
+{/* analysisが存在し、かつ配列（Array）である場合のみ表示を実行する */}
+{analysis && Array.isArray(analysis) ? analysis.map((r, idx) => {
+ {/* analysisの表示部分 */}
+          {analysis && Array.isArray(analysis) ? analysis.map((r, idx) => {
+            const s = SC[r?.subject] || { tx: "#666" }; 
+            const rowPct = r?.pct || 0;
+            const rowSev = r?.severity || "success";
+
+            return (
+              <div key={r?.subject || idx} style={{ marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: s.tx, minWidth: 55 }}>
+                    {r?.subject || "不明"}
+                  </span>
+                  <div style={{ flex: 1, height: 12, background: "#f0ede8", borderRadius: 6, overflow: "hidden" }}>
+                    <div style={{ 
+                      height: "100%", 
+                      background: rowSev === "danger" ? "#ef4444" : rowSev === "warning" ? "#f59e0b" : "#22c55e", 
+                      width: `${Math.min(100, rowPct)}%`, 
+                      borderRadius: 6 
+                    }} />
+                  </div>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: rowSev === "danger" ? "#ef4444" : rowSev === "warning" ? "#f59e0b" : "#22c55e", minWidth: 28, textAlign: "right" }}>
+                    {rowPct}%
+                  </span>
+                </div>
+                <div style={{ fontSize: 7, color: "#999", paddingLeft: 62 }}>
+                  {fmtCnt(r?.done || 0)}/{r?.annual || 0} 残{fmtCnt(r?.remaining || 0)}
+                </div>
+              </div>
+            );
+          }) : (
+            <div style={{ fontSize: 10, color: "#999", padding: 10 }}>分析データを読み込み中...</div>
+          )}
+        </Card>
+      );
+    })}
+  </div>
+</div>
+)}
+</main>
+</>
+);
+}
+  /* データがない場合の予備表示 */
+  <div style={{ fontSize: 10, color: "#999", padding: 10 }}>分析データを読み込み中...</div>
+)} : (
+  <div style={{ fontSize: 10, color: "#999" }}>データを読み込み中...</div>
+)}
                     const s = SC[r.subject];
                     return (
                       <div key={r.subject} style={{ marginBottom: 6 }}>
