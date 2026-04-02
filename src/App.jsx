@@ -1694,9 +1694,8 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
               <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, borderBottom: "2px solid #e8e4de", paddingBottom: 6 }}>{c.name}</h3>
               <div style={{ display: "grid", gridTemplateColumns: c.grades?.length > 1 ? `repeat(${c.grades.length}, 1fr)` : "1fr", gap: 12 }}>
                 {c.grades.map(g => {
-                  const analysis = analyzeHoursForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays, totalWeeks) || [];
-                  const nonCount = analyzeNonCountForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays) || [];
-                  
+                  const analysis = (typeof analyzeHoursForGrade === "function" ? analyzeHoursForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays, totalWeeks) : []) || [];
+const nonCount = (typeof analyzeNonCountForGrade === "function" ? analyzeNonCountForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays) : []) || [];           
                   return (
                     <div key={g}>
                       <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#c0392b" }}>{g}年生</h4>
