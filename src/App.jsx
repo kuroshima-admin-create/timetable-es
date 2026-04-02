@@ -1701,7 +1701,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
                   return (
                     <div key={g}>
                       <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#c0392b" }}>{g}年生</h4>
-                      {analysis.map(r => {
+                      {analysis?.map(r => {
                         const s = SC[r.subject];
                         const rowDone = r.done || 0;
                         const rowTotal = r.annual || 1;
@@ -1731,7 +1731,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
                         <div style={{ marginTop: 8, padding: 6, background: "#f9f7f4", borderRadius: 6 }}>
                           <div style={{ fontSize: 8, fontWeight: 700, color: "#999", marginBottom: 4 }}>カウント対象外</div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                            {nonCount.map(r => (
+                            {nonCount?.map(r => (
                               <span key={r.subject} style={{ fontSize: 8, padding: "1px 6px", borderRadius: 4, background: "#f0f0f0", color: "#666" }}>{r.subject}: {fmtCnt(r.done)}</span>
                             ))}
                           </div>
