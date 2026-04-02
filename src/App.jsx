@@ -1684,51 +1684,49 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
           </div>
         </div>
       )}
-
-      {/* ========= HOURS ========= */}
+{/* ========= HOURS ========= */}
       {tab === "hours" && (
         <div style={{ animation: "fadeUp .3s ease-out" }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>📊 授業時数分析（学年別）</h2>
           <p style={{ fontSize: 10, color: "#999", marginBottom: 14 }}>第{curWeek}週まで / 全{totalWeeks}週（進捗率目安: {Math.round(curWeek / totalWeeks * 100)}%）</p>
+          
           {classes.map(c => (
             <Card key={c.id} style={{ marginBottom: 14 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, borderBottom: "2px solid #e8e4de", paddingBottom: 6 }}>{c.name}</h3>
               <div style={{ display: "grid", gridTemplateColumns: c.grades.length > 1 ? `repeat(${c.grades.length}, 1fr)` : "1fr", gap: 12 }}>
                 {c.grades.map(g => {
-                  const analysis = analyzeHoursForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays, totalWeeks);
-                  const nonCount = analyzeNonCountForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays);
+                  const analysis = analyzeHoursForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays, totalWeeks) || [];
+                  const nonCount = analyzeNonCountForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays) || [];
+                  
                   return (
                     <div key={g}>
                       <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#c0392b" }}>{g}年生</h4>
                       {analysis.map(r => {
                         const s = SC[r.subject];
-                        // --- ここから追加 ---
-                        const done = r.done;
-                        const total = r.annual;
-                        const pct = Math.round((done / total) * 100);
-                        const weekCount = curWeek || 1;
-                        const expectedPct = Math.round((weekCount / (totalWeeks || 35)) * 100);
-                        const severity = pct === 0 ? "none" : pct < expectedPct - 10 ? "danger" : pct < expectedPct - 5 ? "warning" : "success";
-                        // --- ここまで追加 ---
-                        return (
-                          <div key={r.subject} style={{ marginBottom: 6 }}>const s = SC[r.subject];
+                        const rowDone = r.done || 0;
+                        const rowTotal = r.annual || 1;
+                        const rowPct = Math.round((rowDone / rowTotal) * 100);
+                        const expPct = Math.round(((curWeek || 1) / (totalWeeks || 35)) * 100);
+                        const rowSv = rowPct === 0 ? "none" : rowPct < expPct - 10 ? "danger" : rowPct < expPct - 5 ? "warning" : "success";
+
                         return (
                           <div key={r.subject} style={{ marginBottom: 6 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                               <span style={{ fontSize: 9, fontWeight: 700, color: s?.tx || "#666", minWidth: 55 }}>{r.subject}</span>
                               <div style={{ flex: 1, height: 14, background: "#f0ede8", borderRadius: 7, overflow: "hidden", position: "relative" }}>
-                                <div style={{ height: "100%", background: r.severity === "danger" ? "#ef4444" : r.severity === "warning" ? "#f59e0b" : "#22c55e", width: `${Math.min(100, r.pct)}%`, borderRadius: 7, transition: "width .3s" }} />
-                                <div style={{ position: "absolute", left: `${r.expectedPct}%`, top: 0, bottom: 0, width: 1, background: "#666" }} />
+                                <div style={{ height: "100%", background: rowSv === "danger" ? "#ef4444" : rowSv === "warning" ? "#f59e0b" : "#22c55e", width: `${Math.min(100, rowPct)}%`, borderRadius: 7, transition: "width .3s" }} />
+                                <div style={{ position: "absolute", left: `${expPct}%`, top: 0, bottom: 0, width: 1, background: "#666" }} />
                               </div>
-                              <span style={{ fontSize: 8, fontWeight: 700, color: r.severity === "danger" ? "#ef4444" : r.severity === "warning" ? "#f59e0b" : "#22c55e", minWidth: 32, textAlign: "right" }}>{r.pct}%</span>
-                              <Badge sv={r.severity} label={`${fmtCnt(r.done)}/${r.annual}`} />
+                              <span style={{ fontSize: 10, fontWeight: 700, color: rowSv === "danger" ? "#ef4444" : rowSv === "warning" ? "#f59e0b" : "#22c55e", minWidth: 32, textAlign: "right" }}>{rowPct}%</span>
+                              <Badge sv={rowSv} label={`${fmtCnt(rowDone)}/${rowTotal}`} />
                             </div>
                             <div style={{ fontSize: 7, color: "#999", paddingLeft: 62 }}>
-                              残{fmtCnt(r.remaining)}時間 / 週{fmtCnt(r.neededPerWk)}コマ必要
+                              残{fmtCnt(r.remaining || 0)}時間 / 週{fmtCnt(r.neededPerWk || 0)}コマ必要
                             </div>
                           </div>
                         );
                       })}
+
                       {nonCount.length > 0 && (
                         <div style={{ marginTop: 8, padding: 6, background: "#f9f7f4", borderRadius: 6 }}>
                           <div style={{ fontSize: 8, fontWeight: 700, color: "#999", marginBottom: 4 }}>カウント対象外</div>
@@ -1747,7 +1745,6 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
           ))}
         </div>
       )}
-
       {/* ========= EVENTS ========= */}
       {tab === "events" && (
         <div style={{ animation: "fadeUp .3s ease-out" }}>
@@ -2209,3 +2206,4 @@ function TeacherApp({ classes, baseTTs, overrides, events, teachers, modSched, c
     </main>
   </>);
 }
+
