@@ -1163,8 +1163,7 @@ function ClassConfig({ classes, setClasses, teachers, setTeachers }) {
 // ============================================================
 // MONTHLY VIEW
 // ============================================================
-function MonthlyView({ baseTTs, overrides, events, syncedEvents, modSched, semDates, activeDays, classes, selCls, setSelCls, setCurWeek, setTab }) {
-  const [monthOffset, setMonthOffset] = useState(0);
+function MonthlyView({ baseTTs = {}, overrides = {}, events = {}, syncedEvents = [], modSched = {}, semDates = {}, activeDays = [], classes = [], selCls, setSelCls, setCurWeek, setTab }) {  const [monthOffset, setMonthOffset] = useState(0);
   const baseDate = new Date(semDates.s1Start + "T00:00:00");
   const viewDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + monthOffset, 1);
   const year = viewDate.getFullYear();
