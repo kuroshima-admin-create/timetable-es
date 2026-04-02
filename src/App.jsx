@@ -1702,6 +1702,16 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
                       <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#c0392b" }}>{g}年生</h4>
                       {analysis.map(r => {
                         const s = SC[r.subject];
+                        // --- ここから追加 ---
+                        const done = r.done;
+                        const total = r.annual;
+                        const pct = Math.round((done / total) * 100);
+                        const weekCount = upToWeek || 1;
+                        const expectedPct = Math.round((weekCount / (totalWeeks || 35)) * 100);
+                        const severity = pct === 0 ? "none" : pct < expectedPct - 10 ? "danger" : pct < expectedPct - 5 ? "warning" : "success";
+                        // --- ここまで追加 ---
+                        return (
+                          <div key={r.subject} style={{ marginBottom: 6 }}>const s = SC[r.subject];
                         return (
                           <div key={r.subject} style={{ marginBottom: 6 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
