@@ -2174,9 +2174,13 @@ function TeacherApp({ classes, baseTTs, overrides, events, teachers, modSched, c
           <p style={{ fontSize: 10, color: "#999", marginBottom: 14 }}>第{curWeek}週まで / 全{totalWeeks}週</p>
           <div style={{ display: "grid", gridTemplateColumns: myClass.grades.length > 1 ? `repeat(${myClass.grades.length}, 1fr)` : "1fr", gap: 12 }}>
             {myClass.grades.map(g => {
-              const analysis = analyzeHoursForGrade(g, myClass.id, baseTTs[myClass.id] || {}, overrides[myClass.id] || {}, modSched, curWeek, activeDays, totalWeeks);
-              return (
-                <Card key={g}>
+              // ↓ ここから3行を入れ替え
+const analysis = (typeof analyzeHoursForGrade === "function" ? analyzeHoursForGrade(g, myClass.id, baseTTs[myClass.id] || {}, overrides[myClass.id] || {}, modSched, curWeek, activeDays, totalWeeks) : []) || [];
+return (
+  <Card key={g}>
+    <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "#27ae60" }}>{g}年生</h4>
+    {analysis && Array.isArray(analysis) ? analysis.map(r => {
+// ↑ ここまで
                   <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "#27ae60" }}>{g}年生</h4>
                   {analysis.map(r => {
                     const s = SC[r.subject];
