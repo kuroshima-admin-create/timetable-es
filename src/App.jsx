@@ -1693,7 +1693,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
           {classes.map(c => (
             <Card key={c.id} style={{ marginBottom: 14 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, borderBottom: "2px solid #e8e4de", paddingBottom: 6 }}>{c.name}</h3>
-              <div style={{ display: "grid", gridTemplateColumns: c.grades.length > 1 ? `repeat(${c.grades.length}, 1fr)` : "1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: c.grades?.length > 1 ? `repeat(${c.grades.length}, 1fr)` : "1fr", gap: 12 }}>
                 {c.grades.map(g => {
                   const analysis = analyzeHoursForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays, totalWeeks) || [];
                   const nonCount = analyzeNonCountForGrade(g, c.id, baseTTs[c.id] || {}, overrides[c.id] || {}, modSched, curWeek, activeDays) || [];
@@ -1727,7 +1727,7 @@ function KyomuApp({ classes, setClasses, baseTTs, setBaseTTs, overrides, setOver
                         );
                       })}
 
-                      {nonCount.length > 0 && (
+                      {nonCount?.length > 0 && (
                         <div style={{ marginTop: 8, padding: 6, background: "#f9f7f4", borderRadius: 6 }}>
                           <div style={{ fontSize: 8, fontWeight: 700, color: "#999", marginBottom: 4 }}>カウント対象外</div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
